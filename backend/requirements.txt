@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+pydantic-ai
+anthropic
+beautifulsoup4
+lxml
+python-dotenv
