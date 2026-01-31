@@ -27,9 +27,21 @@ body {
   margin: 0.5rem 0;
 }
 
+.prose p:first-child {
+  margin-top: 0;
+}
+
+.prose p:last-child {
+  margin-bottom: 0;
+}
+
 .prose a {
-  color: #003366;
+  color: #2B6B6B;
   text-decoration: underline;
+}
+
+.prose a:hover {
+  color: #1f4f4f;
 }
 
 .prose code {
@@ -45,6 +57,24 @@ body {
   margin: 0.5rem 0;
 }
 
+.prose strong {
+  font-weight: 600;
+}
+
+/* User message prose (white text) */
+.prose-invert a {
+  color: #D4A843;
+}
+
+.prose-invert a:hover {
+  color: #e6bc5a;
+}
+
+.prose-invert code {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -56,10 +86,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #2B6B6B;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #1f4f4f;
 }

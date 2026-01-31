@@ -9,68 +9,7 @@ interface DiagnosticFlowProps {
 }
 
 export default function DiagnosticFlow({ data }: DiagnosticFlowProps) {
-  const [expandedSection, setExpandedSection] = useState<string | null>("causes");
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "easy":
-        return "bg-green-100 text-green-700 border-green-200";
-      case "moderate":
-        return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "difficult":
-        return "bg-orange-100 text-orange-700 border-orange-200";
-      case "call_professional":
-        return "bg-red-100 text-red-700 border-red-200";
-      default:
-        return "bg-gray-100 text-gray-700 border-gray-200";
-    }
-  };
-
-  const getDifficultyLabel = (difficulty: string) => {
-    switch (difficulty) {
-      case "easy":
-        return "DIY Friendly";
-      case "moderate":
-        return "Some Experience Needed";
-      case "difficult":
-        return "Advanced DIY";
-      case "call_professional":
-        return "Call a Professional";
-      default:
-        return difficulty;
-    }
-  };
-
-  const getDifficultyIcon = (difficulty: string) => {
-    if (difficulty === "call_professional") {
-      return (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-          />
-        </svg>
-      );
-    }
-    return (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-        />
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-        />
-      </svg>
-    );
-  };
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -108,24 +47,6 @@ export default function DiagnosticFlow({ data }: DiagnosticFlowProps) {
             )}
           </div>
         </div>
-      </div>
-
-      {/* DIY Difficulty Badge */}
-      <div className="p-4 border-b">
-        <div
-          className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border ${getDifficultyColor(
-            data.diy_difficulty
-          )}`}
-        >
-          {getDifficultyIcon(data.diy_difficulty)}
-          <span className="font-semibold">{getDifficultyLabel(data.diy_difficulty)}</span>
-        </div>
-        {data.diy_difficulty === "call_professional" && (
-          <p className="text-sm text-red-600 mt-2">
-            This repair may require specialized tools or expertise. We recommend contacting
-            a licensed technician.
-          </p>
-        )}
       </div>
 
       {/* Likely Causes */}

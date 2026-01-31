@@ -108,6 +108,7 @@ export interface Message {
   content: string;
   parts?: Part[];
   responseData?: AgentResponse;
+  timestamp?: Date;
 }
 
 export interface ChatRequest {

@@ -6,8 +6,9 @@ interface PartCardProps {
 
 export default function PartCard({ part }: PartCardProps) {
   return (
-    <div className="border rounded-lg p-4 bg-white shadow-sm hover:shadow-md transition">
-      <div className="relative w-full h-48 bg-gray-100 rounded mb-3 flex items-center justify-center">
+    <div className="border rounded-lg p-3 bg-white shadow-sm hover:shadow-md transition flex gap-3 items-center">
+      {/* Thumbnail */}
+      <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
         <img
           src={part.image_url}
           alt={part.name}
@@ -19,36 +20,38 @@ export default function PartCard({ part }: PartCardProps) {
         />
       </div>
 
-      <h3 className="font-semibold text-sm text-gray-900 mb-1 line-clamp-2">
-        {part.name}
-      </h3>
-
-      <p className="text-xs text-gray-600 mb-1">{part.manufacturer}</p>
-
-      <p className="text-xs text-gray-500 mb-3">Part #{part.part_number}</p>
-
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-lg font-bold text-partselect-blue">
-          ${part.price.toFixed(2)}
-        </span>
-        <span
-          className={`text-xs font-semibold px-2 py-1 rounded ${
-            part.in_stock
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
-          }`}
-        >
-          {part.in_stock ? "In Stock" : "Out of Stock"}
-        </span>
+      {/* Details */}
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-sm text-gray-900 line-clamp-1">
+          {part.name}
+        </h3>
+        <p className="text-xs text-gray-500">
+          {part.manufacturer} · #{part.part_number}
+        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <span className="text-sm font-bold text-partselect-blue">
+            ${part.price.toFixed(2)}
+          </span>
+          <span
+            className={`text-xs px-1.5 py-0.5 rounded ${
+              part.in_stock
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {part.in_stock ? "In Stock" : "Out"}
+          </span>
+        </div>
       </div>
 
+      {/* Action */}
       <a
         href={part.part_select_url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block text-center bg-partselect-orange hover:bg-orange-700 text-white py-2 rounded text-sm font-semibold transition"
+        className="flex-shrink-0 bg-partselect-orange hover:bg-orange-700 text-white px-3 py-2 rounded text-xs font-semibold transition"
       >
-        View on PartSelect
+        View
       </a>
     </div>
   );

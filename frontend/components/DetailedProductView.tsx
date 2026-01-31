@@ -11,6 +11,7 @@ interface DetailedProductViewProps {
 export default function DetailedProductView({ data }: DetailedProductViewProps) {
   const [showAllModels, setShowAllModels] = useState(false);
   const [activeTab, setActiveTab] = useState<"specs" | "models" | "related">("specs");
+  const [isExpanded, setIsExpanded] = useState(false);
 
   if (!data.part) {
     return (
@@ -40,8 +41,11 @@ export default function DetailedProductView({ data }: DetailedProductViewProps) 
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      {/* Product Header */}
-      <div className="md:flex">
+      {/* Clickable Product Header - Always Visible */}
+      <div 
+        className="md:flex cursor-pointer hover:bg-gray-50 transition-colors"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         {/* Product Image */}
         <div className="md:w-1/3 p-4 bg-gray-50 flex items-center justify-center">
           <img
@@ -57,17 +61,38 @@ export default function DetailedProductView({ data }: DetailedProductViewProps) 
 
         {/* Product Info */}
         <div className="md:w-2/3 p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-2">{part.full_name}</h3>
-          <p className="text-sm text-gray-600 mb-1">
-            <span className="font-medium">Manufacturer:</span> {part.manufacturer}
-          </p>
-          <p className="text-sm text-gray-600 mb-4">
-            <span className="font-medium">Part #:</span> {part.part_number}
-          </p>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{part.full_name}</h3>
+              <p className="text-sm text-gray-600 mb-1">
+                <span className="font-medium">Manufacturer:</span> {part.manufacturer}
+              </p>
+              <p className="text-sm text-gray-600 mb-4">
+                <span className="font-medium">Part #:</span> {part.part_number}
+              </p>
+            </div>
+            
+            {/* Expand/Collapse Icon */}
+            <svg
+              className={`w-6 h-6 text-gray-400 transition-transform flex-shrink-0 ml-4 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
 
           {/* Price and Stock */}
           <div className="flex items-center gap-4 mb-4">
-            <span className="text-2xl font-bold text-partselect-blue">
+            <span className="text-2xl font-bold text-partselect-teal">
               ${part.price.toFixed(2)}
             </span>
             <span
@@ -84,13 +109,14 @@ export default function DetailedProductView({ data }: DetailedProductViewProps) 
           {/* Rating */}
           {part.avg_rating !== undefined && part.avg_rating !== null && (
             <div className="flex items-center gap-2 mb-4">
-              <div className="flex items-center">
+              {/* Star symbols only */}
+              <div className="flex items-center gap-0.5">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <svg
                     key={star}
                     className={`w-5 h-5 ${
                       star <= Math.round(part.avg_rating!)
-                        ? "text-yellow-400"
+                        ? "text-partselect-gold"
                         : "text-gray-300"
                     }`}
                     fill="currentColor"
@@ -100,12 +126,13 @@ export default function DetailedProductView({ data }: DetailedProductViewProps) 
                   </svg>
                 ))}
               </div>
-              <span className="text-sm text-gray-600">
-                {part.avg_rating.toFixed(1)}
-                {part.num_reviews !== undefined && (
-                  <span className="text-gray-400"> ({part.num_reviews} reviews)</span>
-                )}
-              </span>
+              
+              {/* Number of reviews only (no rating number) */}
+              {part.num_reviews !== undefined && part.num_reviews !== null && part.num_reviews > 0 && (
+                <span className="text-sm text-gray-600">
+                  ({part.num_reviews} {part.num_reviews === 1 ? 'review' : 'reviews'})
+                </span>
+              )}
             </div>
           )}
 
@@ -114,153 +141,162 @@ export default function DetailedProductView({ data }: DetailedProductViewProps) 
             href={part.part_select_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block bg-partselect-orange hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+            className="inline-block bg-partselect-teal text-white px-6 py-3 rounded-lg font-semibold transition"
+            onClick={(e) => { e.stopPropagation(); }}
           >
             View on PartSelect
           </a>
         </div>
       </div>
 
-      {/* Description */}
-      {part.description && (
-        <div className="p-6 border-t">
-          <h4 className="font-semibold text-gray-700 mb-2">Description</h4>
-          <p className="text-gray-600 text-sm">{part.description}</p>
+      {/* Collapsible Content - Description, Tabs, etc. */}
+      {isExpanded && (
+        <div className="animate-fade-in-up">
+          {/* Description */}
+          {part.description && (
+            <div className="p-6 border-t">
+              <h4 className="font-semibold text-gray-700 mb-2">Description</h4>
+              <p className="text-gray-600 text-sm">{part.description}</p>
+            </div>
+          )}
+
+          {/* Tabs */}
+          <div className="border-t">
+            <div className="flex border-b">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveTab("specs");
+                }}
+                className={`flex-1 py-3 text-sm font-semibold transition ${
+                  activeTab === "specs"
+                    ? "text-partselect-teal border-b-2 border-partselect-teal"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Specifications
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveTab("models");
+                }}
+                className={`flex-1 py-3 text-sm font-semibold transition ${
+                  activeTab === "models"
+                    ? "text-partselect-teal border-b-2 border-partselect-teal"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Compatible Models ({data.compatible_models.length})
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveTab("related");
+                }}
+                className={`flex-1 py-3 text-sm font-semibold transition ${
+                  activeTab === "related"
+                    ? "text-partselect-teal border-b-2 border-partselect-teal"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Related Parts
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-4">
+              {/* Specifications Tab */}
+              {activeTab === "specs" && (
+                <div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-gray-50 p-3 rounded">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        Part Number
+                      </p>
+                      <p className="font-medium text-gray-800">{part.part_number}</p>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        Manufacturer
+                      </p>
+                      <p className="font-medium text-gray-800">{part.manufacturer}</p>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        Installation Difficulty
+                      </p>
+                      <p className="font-medium text-gray-800 capitalize">
+                        {part.installation_difficulty}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide">
+                        Warranty
+                      </p>
+                      <p className="font-medium text-gray-800">
+                        {part.warranty_info || "No warranty information available"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Compatible Models Tab */}
+              {activeTab === "models" && (
+                <div>
+                  {data.compatible_models.length > 0 ? (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {displayModels.map((model, index) => (
+                          <span
+                            key={index}
+                            className="px-3 py-1 bg-gray-100 rounded text-sm text-gray-700 font-mono"
+                          >
+                            {model}
+                          </span>
+                        ))}
+                      </div>
+                      {data.compatible_models.length > 10 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowAllModels(!showAllModels);
+                          }}
+                          className="mt-3 text-partselect-teal hover:text-partselect-teal-dark text-sm font-semibold"
+                        >
+                          {showAllModels
+                            ? "Show Less"
+                            : `Show All ${data.compatible_models.length} Models`}
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">
+                      No compatible models listed
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Related Parts Tab */}
+              {activeTab === "related" && (
+                <div>
+                  {data.related_parts && data.related_parts.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {data.related_parts.map((relatedPart) => (
+                        <PartCard key={relatedPart.part_number} part={relatedPart} />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">No related parts found</p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Tabs */}
-      <div className="border-t">
-        <div className="flex border-b">
-          <button
-            onClick={() => setActiveTab("specs")}
-            className={`flex-1 py-3 text-sm font-semibold transition ${
-              activeTab === "specs"
-                ? "text-partselect-blue border-b-2 border-partselect-blue"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Specifications
-          </button>
-          <button
-            onClick={() => setActiveTab("models")}
-            className={`flex-1 py-3 text-sm font-semibold transition ${
-              activeTab === "models"
-                ? "text-partselect-blue border-b-2 border-partselect-blue"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Compatible Models ({data.compatible_models.length})
-          </button>
-          <button
-            onClick={() => setActiveTab("related")}
-            className={`flex-1 py-3 text-sm font-semibold transition ${
-              activeTab === "related"
-                ? "text-partselect-blue border-b-2 border-partselect-blue"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Related Parts
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        <div className="p-4">
-          {/* Specifications Tab */}
-          {activeTab === "specs" && (
-            <div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">
-                    Part Number
-                  </p>
-                  <p className="font-medium text-gray-800">{part.part_number}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">
-                    Manufacturer
-                  </p>
-                  <p className="font-medium text-gray-800">{part.manufacturer}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">
-                    Installation Difficulty
-                  </p>
-                  <p className="font-medium text-gray-800 capitalize">
-                    {part.installation_difficulty}
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">
-                    Reviews
-                  </p>
-                  <p className="font-medium text-gray-800">
-                    {part.num_reviews} reviews
-                    {part.avg_rating && ` (${part.avg_rating.toFixed(1)} avg)`}
-                  </p>
-                </div>
-              </div>
-
-              {/* Warranty Info */}
-              {part.warranty_info && (
-                <div className="mt-4 bg-blue-50 p-4 rounded">
-                  <h5 className="font-semibold text-blue-800 mb-1">Warranty</h5>
-                  <p className="text-sm text-blue-700">{part.warranty_info}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Compatible Models Tab */}
-          {activeTab === "models" && (
-            <div>
-              {data.compatible_models.length > 0 ? (
-                <>
-                  <div className="flex flex-wrap gap-2">
-                    {displayModels.map((model, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-gray-100 rounded text-sm text-gray-700 font-mono"
-                      >
-                        {model}
-                      </span>
-                    ))}
-                  </div>
-                  {data.compatible_models.length > 10 && (
-                    <button
-                      onClick={() => setShowAllModels(!showAllModels)}
-                      className="mt-3 text-partselect-blue hover:text-blue-700 text-sm font-semibold"
-                    >
-                      {showAllModels
-                        ? "Show Less"
-                        : `Show All ${data.compatible_models.length} Models`}
-                    </button>
-                  )}
-                </>
-              ) : (
-                <p className="text-gray-500 text-center py-4">
-                  No compatible models listed
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Related Parts Tab */}
-          {activeTab === "related" && (
-            <div>
-              {data.related_parts && data.related_parts.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {data.related_parts.map((relatedPart) => (
-                    <PartCard key={relatedPart.part_number} part={relatedPart} />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 text-center py-4">No related parts found</p>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
