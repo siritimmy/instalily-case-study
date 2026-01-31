@@ -45,6 +45,10 @@ async def search_parts(query: str, limit: int = 10) -> list[dict]:
 
     Uses the PartSelect search API which redirects to results.
     Falls back gracefully if elements are not found.
+
+    IMPORTANT: When searching for a specific part number (e.g., PS11752778),
+    PartSelect redirects directly to the product detail page. This function
+    detects this case and extracts the single product from the detail page.
     """
     import urllib.parse
 
@@ -53,16 +57,94 @@ async def search_parts(query: str, limit: int = 10) -> list[dict]:
 
     # Use the API search endpoint (it will redirect to the appropriate page)
     search_url = f"{BASE_URL}/api/search/?searchterm={encoded_query}&trackSearchType=combinedsearch&trackSearchLocation=header&siteId=1&autocompleteModelId="
- 
+
     logger.info(f"Searching PartSelect for: {query} (limit: {limit})")
 
-    soup = await fetch_page(search_url)
+    # Use httpx directly to track redirects and get final URL
+    final_url = ""
+    try:
+        async with httpx.AsyncClient(headers=HEADERS, timeout=10.0, follow_redirects=True) as client:
+            response = await client.get(search_url)
+            final_url = str(response.url)
+            logger.info(f"Search URL redirected to: {final_url}")
+
+            if response.status_code != 200:
+                logger.warning(f"Non-200 status code: {response.status_code}")
+                return []
+
+            soup = BeautifulSoup(response.text, "html.parser")
+    except Exception as e:
+        logger.error(f"Error fetching search page: {e}")
+        return []
+
     if not soup:
         logger.warning(f"Failed to fetch search page for query: {query}")
         return []
 
     parts = []
 
+    # Check if we were redirected to a product detail page
+    # This happens when searching for a specific part number (e.g., PS11752778)
+    main_elem = soup.select_one("[data-page-type='PartDetail']")
+    if main_elem or (".htm" in final_url and "-" in final_url):
+        logger.info("Detected redirect to product detail page - extracting single product")
+
+        # Extract product data from the detail page's data attributes
+        data_elem = soup.select_one("[data-price][data-brand][data-inventory-id]")
+        if data_elem:
+            try:
+                # Extract data from attributes
+                price_str = data_elem.get("data-price", "0")
+                try:
+                    price = float(price_str)
+                except ValueError:
+                    price = 0.0
+
+                manufacturer = data_elem.get("data-brand", "Unknown")
+                availability = data_elem.get("data-availability", "").lower()
+                in_stock = availability == "instock"
+                inventory_id = data_elem.get("data-inventory-id", "")
+
+                # Extract part number from inventory ID
+                part_number = f"PS{inventory_id}" if inventory_id else query
+
+                # Extract full name from page title
+                title_tag = soup.find("title")
+                full_name = "Unknown Part"
+                if title_tag:
+                    full_name = title_tag.text.replace("– PartSelect.com", "").replace("Official", "").strip()
+
+                # Extract image
+                image_url = ""
+                img_elem = soup.select_one("img[itemprop='image'], .pd__img img, .main-image img")
+                if img_elem:
+                    image_url = img_elem.get("src", "") or img_elem.get("data-src", "")
+                    if image_url and not image_url.startswith("http"):
+                        image_url = f"{BASE_URL}{image_url}" if image_url.startswith("/") else f"{BASE_URL}/{image_url}"
+
+                # Get canonical URL
+                canonical = soup.find("link", rel="canonical")
+                part_url = final_url
+                if canonical and canonical.get("href"):
+                    part_url = canonical.get("href")
+
+                logger.info(f"Extracted product from detail page: {part_number} - {full_name} - ${price}")
+
+                return [{
+                    "part_number": part_number,
+                    "name": full_name,
+                    "price": price,
+                    "image_url": image_url,
+                    "manufacturer": manufacturer,
+                    "in_stock": in_stock,
+                    "part_select_url": part_url,
+                }]
+            except Exception as e:
+                logger.error(f"Error extracting product from detail page: {e}", exc_info=True)
+        else:
+            logger.warning("On detail page but couldn't find data attributes")
+
+    # If not a product detail page, try search results selectors
     # Try multiple selector strategies for different PartSelect layouts
     selector_strategies = [
         ".ps-part-item",
@@ -70,7 +152,9 @@ async def search_parts(query: str, limit: int = 10) -> list[dict]:
         ".product-item",
         ".search-result-item",
         "[data-part]",
-        "div.pd__wrapper"  # Common PartSelect layout
+        "div.pd__wrapper",  # Common PartSelect layout
+        ".mega-m__part",    # Another common layout
+        ".nf__part",        # "Not found" fallback parts
     ]
 
     items = []
@@ -682,70 +766,108 @@ async def diagnose_issue(
 
 
 async def search_by_model(model_number: str) -> dict:
-    """Find all parts compatible with a specific model"""
+    """Find all parts compatible with a specific model
+
+    Scrapes the PartSelect model page to extract parts.
+    Parts are displayed using .mega-m__part class on modern PartSelect pages.
+    """
+    import re
+
     # Search for the model on PartSelect
     search_url = f"{BASE_URL}/Models/{model_number}/"
+    logger.info(f"Searching for parts by model: {model_number}")
 
     soup = await fetch_page(search_url)
     if not soup:
-        # Return placeholder if page not found
+        logger.warning(f"Failed to fetch model page for: {model_number}")
         return {
             "model_number": model_number,
-            "appliance_info": "Unknown",
+            "appliance_info": "Model not found",
             "common_parts": [],
             "all_parts_count": 0,
             "parts_by_category": {},
         }
 
-    parts_by_category = {}
+    # Extract appliance info from page title
+    appliance_info = f"Parts for model {model_number}"
+    title_tag = soup.find("title")
+    if title_tag:
+        appliance_info = title_tag.text.replace("- OEM Parts & Repair Help - PartSelect.com", "").strip()
+
     all_parts = []
 
-    # Extract parts grouped by category
-    for category_section in soup.select(".parts-category"):
-        category_name = category_section.select_one(".category-title")
-        category_name = category_name.text.strip() if category_name else "Other"
+    # Modern PartSelect uses .mega-m__part for part items
+    part_items = soup.select(".mega-m__part")
+    logger.info(f"Found {len(part_items)} parts for model {model_number}")
 
-        category_parts = []
-        for part_item in category_section.select(".part-item")[:5]:
-            try:
-                part_number = part_item.select_one(".part-number")
-                part_number = part_number.text.strip() if part_number else "N/A"
-
-                name = part_item.select_one(".part-name")
-                name = name.text.strip() if name else "Unknown"
-
-                price_elem = part_item.select_one(".price")
-                price = 0.0
-                if price_elem:
-                    price_str = price_elem.text.strip().replace("$", "")
-                    try:
-                        price = float(price_str)
-                    except:
-                        pass
-
-                category_parts.append(
-                    {
-                        "part_number": part_number,
-                        "name": name,
-                        "price": price,
-                        "image_url": "",
-                        "manufacturer": "",
-                        "in_stock": True,
-                        "part_select_url": f"{BASE_URL}/{part_number}",
-                    }
-                )
-                all_parts.append(category_parts[-1])
-            except Exception as e:
-                logger.error(f"Error parsing part: {e}")
+    for part_item in part_items:
+        try:
+            # Extract link to get part number and URL
+            link = part_item.select_one("a[href*='PS'], a[href*='.htm']")
+            if not link:
                 continue
 
-        if category_parts:
-            parts_by_category[category_name] = category_parts
+            href = link.get("href", "")
+
+            # Extract part number from URL (format: /PS{number}-Brand-...)
+            part_number = "N/A"
+            ps_match = re.search(r"/(PS\d+)-", href)
+            if ps_match:
+                part_number = ps_match.group(1)
+
+            # Build full URL
+            part_url = href
+            if href.startswith("/"):
+                part_url = f"{BASE_URL}{href}"
+
+            # Extract name from .mega-m__part__name
+            name_elem = part_item.select_one(".mega-m__part__name")
+            name = name_elem.text.strip() if name_elem else "Unknown Part"
+
+            # Extract price from .mega-m__part__price
+            price = 0.0
+            price_elem = part_item.select_one(".mega-m__part__price")
+            if price_elem:
+                price_text = price_elem.text.strip()
+                price_match = re.search(r"\$?([\d,]+\.?\d*)", price_text)
+                if price_match:
+                    try:
+                        price = float(price_match.group(1).replace(",", ""))
+                    except ValueError:
+                        pass
+
+            # Extract image URL (uses lazy loading)
+            image_url = ""
+            img_elem = part_item.select_one("img")
+            if img_elem:
+                image_url = img_elem.get("data-src", "") or img_elem.get("src", "")
+                # Skip base64 placeholders
+                if image_url.startswith("data:"):
+                    image_url = img_elem.get("data-src", "")
+                if image_url and not image_url.startswith("http"):
+                    image_url = f"{BASE_URL}{image_url}" if image_url.startswith("/") else f"https:{image_url}"
+
+            # Only add if we have meaningful data
+            if part_number != "N/A" or name != "Unknown Part":
+                all_parts.append({
+                    "part_number": part_number,
+                    "name": name,
+                    "price": price,
+                    "image_url": image_url,
+                    "manufacturer": "",  # Not easily available on this page
+                    "in_stock": True,  # Assume in stock since it's shown
+                    "part_select_url": part_url,
+                })
+        except Exception as e:
+            logger.error(f"Error parsing part from model page: {e}", exc_info=True)
+            continue
+
+    logger.info(f"Successfully extracted {len(all_parts)} parts for model {model_number}")
 
     return {
         "model_number": model_number,
-        "appliance_info": f"Parts for model {model_number}",
-        "common_parts": all_parts[:5],
+        "appliance_info": appliance_info,
+        "common_parts": all_parts[:10],  # Top 10 common parts
         "all_parts_count": len(all_parts),
-        "parts_by_category": parts_by_category,
+        "parts_by_category": {},  # Categories not available on this page layout
     }

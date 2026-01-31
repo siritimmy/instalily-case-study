@@ -32,12 +32,17 @@ export default function ChatWindow() {
       // Call FastAPI via NextJS API route
       const response = await sendMessage(input, messages);
 
+      // Extract parts from response types that have them
+      const parts = 'parts' in response ? response.parts :
+                    ('recommended_parts' in response ? response.recommended_parts : undefined);
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content: response.message,
-          parts: response.parts,
+          parts: parts,
+          responseData: response,
         },
       ]);
     } catch (error) {

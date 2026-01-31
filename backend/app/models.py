@@ -89,7 +89,9 @@ class ModelPartsResult(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
-    conversation_history: list[dict] = []
+    conversation_history: list[dict] = Field(default=[], alias="conversationHistory")
+
+    model_config = {"populate_by_name": True}
 
 
 class ChatResponse(BaseModel):

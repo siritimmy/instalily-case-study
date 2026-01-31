@@ -6,20 +6,35 @@ A modern, production-ready chat agent for PartSelect e-commerce focused on refri
 
 ```
 instalily-case-study/
-├── frontend/              # NextJS chat interface
-│   ├── app/              # Next.js app directory
-│   ├── components/       # React components
-│   ├── lib/             # Utilities and types
-│   ├── package.json
-│   ├── next.config.js
-│   └── README.md        # Frontend-specific setup
-├── backend/              # FastAPI + Pydantic AI
-│   ├── app/             # FastAPI application
-│   ├── tools/           # Tool definitions
-│   ├── requirements.txt
-│   └── README.md        # Backend-specific setup
-├── README.md            # This file
-└── TEST_REPORT.md       # Phase 1 testing results
+├── frontend/                    # NextJS chat interface
+│   ├── app/                    # Next.js app directory
+│   ├── components/             # React components
+│   │   ├── ChatWindow.tsx      # Main chat interface
+│   │   ├── MessageBubble.tsx   # Message + response routing
+│   │   ├── PartCard.tsx        # Compact product cards
+│   │   ├── DetailedProductView.tsx  # Full product view
+│   │   ├── CompatibilityCard.tsx    # Compatibility results
+│   │   ├── InstallationWizard.tsx   # Step-by-step guide
+│   │   └── DiagnosticFlow.tsx       # Troubleshooting UI
+│   ├── lib/                    # Utilities and types
+│   │   ├── api.ts              # API client
+│   │   └── types.ts            # TypeScript interfaces
+│   └── package.json
+├── backend/                    # FastAPI + Pydantic AI
+│   ├── app/
+│   │   ├── main.py            # FastAPI app
+│   │   ├── orchestrator.py    # Agent coordination
+│   │   ├── router_agent.py    # Intent classification
+│   │   ├── response_models.py # Typed responses
+│   │   ├── search_agent.py    # Search sub-agent
+│   │   ├── part_details_agent.py
+│   │   ├── compatibility_agent.py
+│   │   ├── installation_agent.py
+│   │   ├── troubleshooting_agent.py
+│   │   └── web_fetcher.py     # Data fetching
+│   └── requirements.txt
+├── CLAUDE.md                   # Detailed architecture docs
+└── README.md                   # This file
 ```
 
 ## Quick Start
@@ -87,22 +102,22 @@ The frontend will be available at `http://localhost:3000`.
 ### Frontend (NextJS)
 - **Framework**: Next.js 14+ with TypeScript
 - **Styling**: Tailwind CSS with PartSelect branding
-- **Components**:
-  - `ChatWindow`: Main chat interface
-  - `MessageBubble`: Message display with markdown
-  - `PartCard`: Product card with images and details
-  - `LoadingIndicator`: Animated loading state
+- **Response-Type Components**: Each response type renders a specialized UI component
+  - `PartCard`: Compact product cards for search results
+  - `DetailedProductView`: Full product view with tabs
+  - `CompatibilityCard`: Visual compatibility check results
+  - `InstallationWizard`: Step-by-step installation guide
+  - `DiagnosticFlow`: Troubleshooting with expandable sections
 
-### Backend (FastAPI + Pydantic AI)
+### Backend (FastAPI + Sub-Agent Architecture)
 - **Framework**: FastAPI with async support
-- **Agent**: Pydantic AI agent with Claude integration
-- **Tools**: 6 specialized tools for PartSelect integration
-  1. **search_parts**: Find parts by query/symptoms
-  2. **get_part_details**: Full product information
-  3. **check_compatibility**: Verify model compatibility
-  4. **get_installation_guide**: Step-by-step instructions
-  5. **diagnose_issue**: Troubleshoot problems
-  6. **search_by_model**: All parts for a model
+- **Pattern**: Router + Specialized Sub-Agents
+- **Sub-Agents** (each with typed output):
+  1. **SearchAgent** → `SearchResponse`: Find parts by query
+  2. **PartDetailsAgent** → `PartDetailsResponse`: Full product info
+  3. **CompatibilityAgent** → `CompatibilityResponse`: Model compatibility
+  4. **InstallationAgent** → `InstallationResponse`: Installation guides
+  5. **TroubleshootingAgent** → `DiagnosisResponse`: Problem diagnosis
 
 ### Data Flow
 ```
@@ -112,13 +127,19 @@ NextJS API Route (/api/chat)
     ↓
 FastAPI Backend (/chat endpoint)
     ↓
-Pydantic AI Agent
+Orchestrator
+    ↓
+Router Agent (intent classification)
+    ↓
+Specialized Sub-Agent (based on intent)
     ↓
 Tool Functions (Web Fetching)
     ↓
 PartSelect.com (Live Data)
     ↓
-Response with Rich Products
+Typed Response (SearchResponse | CompatibilityResponse | etc.)
+    ↓
+Frontend renders matching UI component
 ```
 
 ## Example Queries
@@ -143,15 +164,21 @@ Try these in the chat:
 
 ## Key Features
 
-### Modern AI Architecture
-- **Tool-Based Agent**: Uses Pydantic AI's function calling for structured, reliable responses
+### Advanced Sub-Agent Architecture
+- **Router + Sub-Agents**: Intent classification routes to specialized agents
+- **Typed Responses**: Each sub-agent returns a strongly-typed response
+- **Discriminated Unions**: Frontend uses `type` field to render correct component
 - **Live Data Integration**: Fetches real PartSelect data via web tools
-- **Type Safety**: All tools use Pydantic models for validation
+
+### Type-Driven Development
+- **Backend**: Pydantic models with `type` discriminator field
+- **Frontend**: TypeScript interfaces matching backend models
+- **UI Routing**: `switch(response.type)` renders specialized components
 
 ### Extensibility
-- Easy to add new appliances (just add new tools)
-- Tool architecture allows independent optimization
-- System prompt enforces scope control
+- Add new sub-agent without modifying existing agents
+- Each agent has focused system prompt and tools
+- Clear pattern: Agent → Response Type → UI Component
 
 ### Production-Ready
 - Proper error handling and logging
@@ -159,11 +186,12 @@ Try these in the chat:
 - Health check endpoints
 - Environment variable configuration
 
-### User Experience
-- Real-time streaming responses
-- Product cards with images, prices, stock status
-- Links to PartSelect for actual purchases
-- Markdown support for rich text
+### Rich User Experience
+- **Search**: Grid of product cards with images and prices
+- **Part Details**: Tabbed view with specs, models, related parts
+- **Compatibility**: Visual checkmark/X with confidence level
+- **Installation**: Step-by-step wizard with safety warnings
+- **Diagnosis**: Expandable accordion with causes and fixes
 
 ## Scope Control
 
@@ -262,11 +290,13 @@ For issues or questions, check:
 
 ✅ Modern framework (NextJS + FastAPI)
 ✅ PartSelect branding and styling
-✅ Tool-based agent architecture
-✅ Extensible design (easy to add new appliances)
-✅ Real data integration
-✅ Installation help via tools
-✅ Compatibility checking
-✅ Troubleshooting capabilities
-✅ Scope enforcement
-✅ Professional UX with product cards
+✅ **Sub-agent architecture** with router and specialized agents
+✅ **Typed responses** with discriminated unions
+✅ **Specialized UI components** per response type
+✅ Extensible design (add new sub-agents easily)
+✅ Real data integration from PartSelect.com
+✅ Installation wizard with step navigation
+✅ Visual compatibility checking
+✅ Diagnostic flow with troubleshooting
+✅ Scope enforcement via router agent
+✅ Professional UX with rich product displays

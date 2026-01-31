@@ -23,14 +23,24 @@ use_test_mode = not api_key or api_key.startswith("sk-test")
 # Determine model to use
 model = "test" if use_test_mode else "claude-sonnet-4-5-20250929"
 
+class Part(BaseModel):
+    """Part information extracted from PartSelect.com"""
+    part_number: str = Field(description="PartSelect part number, e.g., 'PS11752778'")
+    name: str = Field(description="Full product name")
+    price: float | None = Field(description="Price of the part")
+    image_url: str | None = Field(description="URL of the product image")
+    manufacturer: str | None = Field(description="Brand name, e.g., Whirlpool, GE")
+    in_stock: bool | None = Field(description="Whether the part is currently in stock")
+    url: str | None = Field(description="Full PartSelect.com URL to the product")
+
 
 # Define result model for structured output
 class PartSelectResponse(BaseModel):
     """Structured response from the PartSelect agent"""
     message: str = Field(description="Natural language response to the user")
-    parts: list[dict] = Field(
+    parts: list[Part] = Field(
         default=[],
-        description="List of parts found, each with: part_number, name, price, image_url, manufacturer, in_stock, url"
+        description="List of parts found"
     )
     source_urls: list[str] = Field(
         default=[],
@@ -124,19 +134,15 @@ Present information clearly in the `message` field and structured data in the `p
 
 
 # Simple run function
-async def run_agent(user_message: str, conversation_history: list = None) -> dict:
+async def run_agent(user_message: str, conversation_history: list = None) -> PartSelectResponse:
     """
     Run the agent with a user message.
 
-    Returns a dict with:
-    - message: Natural language response
-    - parts: List of part objects
-    - source_urls: URLs used
+    Returns:
+        PartSelectResponse: Structured response containing:
+            - message: Natural language response
+            - parts: List of Part objects
+            - source_urls: URLs used
     """
     result = await agent.run(user_message)
-
-    return {
-        "message": result.output.message,
-        "parts": result.output.parts,
-        "source_urls": result.output.source_urls,
-    }
+    return result.output
