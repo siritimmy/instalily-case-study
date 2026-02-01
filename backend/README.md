@@ -88,10 +88,9 @@ The backend uses:
 
 1. **search_parts**: Find parts by query, part number, or symptom
 2. **get_part_details**: Get full product information
-3. **check_compatibility**: Verify part fits a model
-4. **get_installation_guide**: Get installation instructions
-5. **diagnose_issue**: Troubleshoot appliance problems
-6. **search_by_model**: Find all parts for an appliance model
+3. **get_installation_guide**: Get installation instructions
+4. **diagnose_issue**: Troubleshoot appliance problems
+5. **search_by_model**: Find all parts for an appliance model
 
 ## Development Notes
 

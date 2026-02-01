@@ -13,7 +13,6 @@ instalily-case-study/
 │   │   ├── MessageBubble.tsx   # Message + response routing
 │   │   ├── PartCard.tsx        # Compact product cards
 │   │   ├── DetailedProductView.tsx  # Full product view
-│   │   ├── CompatibilityCard.tsx    # Compatibility results
 │   │   ├── InstallationWizard.tsx   # Step-by-step guide
 │   │   └── DiagnosticFlow.tsx       # Troubleshooting UI
 │   ├── lib/                    # Utilities and types
@@ -28,12 +27,10 @@ instalily-case-study/
 │   │   ├── response_models.py # Typed responses
 │   │   ├── search_agent.py    # Search sub-agent
 │   │   ├── part_details_agent.py
-│   │   ├── compatibility_agent.py
 │   │   ├── installation_agent.py
 │   │   ├── troubleshooting_agent.py
 │   │   └── web_fetcher.py     # Data fetching
 │   └── requirements.txt
-├── CLAUDE.md                   # Detailed architecture docs
 └── README.md                   # This file
 ```
 
@@ -105,7 +102,6 @@ The frontend will be available at `http://localhost:3000`.
 - **Response-Type Components**: Each response type renders a specialized UI component
   - `PartCard`: Compact product cards for search results
   - `DetailedProductView`: Full product view with tabs
-  - `CompatibilityCard`: Visual compatibility check results
   - `InstallationWizard`: Step-by-step installation guide
   - `DiagnosticFlow`: Troubleshooting with expandable sections
 
@@ -115,9 +111,8 @@ The frontend will be available at `http://localhost:3000`.
 - **Sub-Agents** (each with typed output):
   1. **SearchAgent** → `SearchResponse`: Find parts by query
   2. **PartDetailsAgent** → `PartDetailsResponse`: Full product info
-  3. **CompatibilityAgent** → `CompatibilityResponse`: Model compatibility
-  4. **InstallationAgent** → `InstallationResponse`: Installation guides
-  5. **TroubleshootingAgent** → `DiagnosisResponse`: Problem diagnosis
+  3. **InstallationAgent** → `InstallationResponse`: Installation guides
+  4. **TroubleshootingAgent** → `DiagnosisResponse`: Problem diagnosis
 
 ### Data Flow
 ```
@@ -137,7 +132,7 @@ Tool Functions (Web Fetching)
     ↓
 PartSelect.com (Live Data)
     ↓
-Typed Response (SearchResponse | CompatibilityResponse | etc.)
+Typed Response (SearchResponse | InstallationResponse | etc.)
     ↓
 Frontend renders matching UI component
 ```
@@ -150,16 +145,13 @@ Try these in the chat:
    - "Tell me about part PS11752778"
    - "I need an ice maker for my refrigerator"
 
-2. **Compatibility Check**
-   - "Is PS11752778 compatible with WDT780SAEM1?"
-
-3. **Installation Help**
+2. **Installation Help**
    - "How can I install part number PS11752778?"
 
-4. **Troubleshooting**
+3. **Troubleshooting**
    - "The ice maker on my Whirlpool fridge is not working. How can I fix it?"
 
-5. **Model Search**
+4. **Model Search**
    - "What parts are available for WDT780SAEM1?"
 
 ## Key Features
@@ -189,7 +181,6 @@ Try these in the chat:
 ### Rich User Experience
 - **Search**: Grid of product cards with images and prices
 - **Part Details**: Tabbed view with specs, models, related parts
-- **Compatibility**: Visual checkmark/X with confidence level
 - **Installation**: Step-by-step wizard with safety warnings
 - **Diagnosis**: Expandable accordion with causes and fixes
 
@@ -198,7 +189,7 @@ Try these in the chat:
 The agent is designed to ONLY help with:
 - **Refrigerator parts** from PartSelect
 - **Dishwasher parts** from PartSelect
-- Installation guides, compatibility checking, troubleshooting
+- Installation guides and troubleshooting
 
 The agent will politely decline help with other appliances.
 
@@ -296,7 +287,6 @@ For issues or questions, check:
 ✅ Extensible design (add new sub-agents easily)
 ✅ Real data integration from PartSelect.com
 ✅ Installation wizard with step navigation
-✅ Visual compatibility checking
 ✅ Diagnostic flow with troubleshooting
 ✅ Scope enforcement via router agent
 ✅ Professional UX with rich product displays
