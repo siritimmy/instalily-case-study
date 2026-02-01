@@ -160,9 +160,9 @@ class AgentOrchestrator:
             message=(
                 "I specialize in refrigerator and dishwasher parts from PartSelect. "
                 "I can help you:\n\n"
-                "• **Find parts** - Search for replacement parts\n"
-                "• **Check compatibility** - Verify if a part fits your model\n"
-                "• **Installation guides** - Get step-by-step instructions\n"
+                "• **Find parts** - Search for replacement parts\n\n"
+                "• **Check compatibility** - Verify if a part fits your model\n\n"
+                "• **Installation guides** - Get step-by-step instructions\n\n"
                 "• **Troubleshoot issues** - Diagnose problems and find fixes\n\n"
                 "For other appliances like ovens, washers, or dryers, please contact "
                 "PartSelect customer service."
